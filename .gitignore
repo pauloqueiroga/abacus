@@ -19,3 +19,9 @@
 
 # Go workspace file
 go.work
+
+# Files that should not make it to Git
+local-only/
+
+# VS Code local configuration
+.vscode/
