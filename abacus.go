@@ -18,7 +18,6 @@ func main() {
 	}
 
 	projectsCsvPath := "local-only/projects.csv"
-	usersCsvPath := "local-only/users.csv"
 	pullrequestsCsvPath := "local-only/pullrequests.csv"
 
 	switch os.Args[1] {
@@ -32,16 +31,18 @@ func main() {
 		}
 
 	case "pullrequests":
+		if len(os.Args) < 5 {
+			fmt.Println("At least four arguments are required.")
+			printUsage()
+			return
+		}
+		if len(os.Args) >= 7 {
+			pullrequestsCsvPath = os.Args[6]
+		}
 		if len(os.Args) >= 6 {
-			pullrequestsCsvPath = os.Args[5]
+			projectsCsvPath = os.Args[5]
 		}
-		if len(os.Args) >= 5 {
-			usersCsvPath = os.Args[4]
-		}
-		if len(os.Args) >= 4 {
-			projectsCsvPath = os.Args[3]
-		}
-		getPullRequests(os.Args[2], projectsCsvPath, usersCsvPath, pullrequestsCsvPath)
+		getPullRequests(os.Args[2], os.Args[3], os.Args[4], projectsCsvPath, pullrequestsCsvPath)
 	default:
 		fmt.Println("Don't know how to process this command...", os.Args)
 		printUsage()
@@ -55,6 +56,7 @@ func getProjects(baseUrl, projectsCsvPath string) error {
 		return err
 	}
 	defer output.Close()
+	appendRecord(output, "id", "name")
 
 	req, err := newHttpRequest("get", baseUrl+"/_apis/projects?api-version=7.0", nil)
 	if err != nil {
@@ -87,8 +89,66 @@ func getProjects(baseUrl, projectsCsvPath string) error {
 	return nil
 }
 
-func getPullRequests(baseUrl, projectsCsvPath, usersCsvPath, pullrequestsCsvPath string) {
-	panic("unimplemented")
+func getPullRequests(baseUrl, minDate, maxDate, projectsCsvPath, pullrequestsCsvPath string) error {
+	output, err := os.Create(pullrequestsCsvPath)
+	if err != nil {
+		return err
+	}
+	defer output.Close()
+	appendRecord(output,
+		"pullRequestId",
+		"authorId",
+		"creationDate",
+		"closedDate",
+		"sourceRefName",
+		"targetRefName",
+		"mergeStatus",
+		"reviewersCount",
+		"url",
+	)
+
+	url := fmt.Sprintf("%s/_apis/git/pullrequests?api-version=7.1-preview.1&searchCriteria.status=completed&searchCriteria.minTime=%s&searchCriteria.maxTime=%s", baseUrl, minDate, maxDate)
+	req, err := newHttpRequest("get", url, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	prBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	var mapped map[string]any
+	err = json.Unmarshal(prBody, &mapped)
+	if err != nil {
+		return err
+	}
+
+	prList := mapped["value"].([]interface{})
+
+	for _, p := range prList {
+		pr := p.(map[string]any)
+		author := pr["createdBy"].(map[string]any)
+		reviewers := pr["reviewers"].([]interface{})
+		appendRecord(output,
+			fmt.Sprint(pr["pullRequestId"]),
+			author["id"].(string),
+			pr["creationDate"].(string),
+			pr["closedDate"].(string),
+			pr["sourceRefName"].(string),
+			pr["targetRefName"].(string),
+			pr["mergeStatus"].(string),
+			fmt.Sprint(len(reviewers)),
+			pr["url"].(string),
+		)
+	}
+
+	return nil
 }
 
 func newHttpRequest(method string, url string, reqBody io.Reader) (*http.Request, error) {
@@ -120,6 +180,6 @@ func printUsage() {
 	fmt.Println("USAGE:")
 	fmt.Println("  abacus projects <URL to AzDO org> [output CSV path]")
 	fmt.Println("            Retrieves a list of projects from the given Azure DevOps Organization URL")
-	fmt.Println("  abacus pullrequests <URL to AzDO org> [projects CSV path] [users CSV path] [output CSV path]")
+	fmt.Println("  abacus pullrequests <URL to AzDO org> <minimum date> <maximum date> [projects CSV path] [output CSV path]")
 	fmt.Println("               Retrieves Pull Requests for each of the project/user combination")
 }
