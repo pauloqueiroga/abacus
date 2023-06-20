@@ -36,13 +36,10 @@ func main() {
 			printUsage()
 			return
 		}
-		if len(os.Args) >= 7 {
-			pullrequestsCsvPath = os.Args[6]
-		}
 		if len(os.Args) >= 6 {
-			projectsCsvPath = os.Args[5]
+			pullrequestsCsvPath = os.Args[5]
 		}
-		getPullRequests(os.Args[2], os.Args[3], os.Args[4], projectsCsvPath, pullrequestsCsvPath)
+		getPullRequests(os.Args[2], os.Args[3], os.Args[4], pullrequestsCsvPath)
 	default:
 		fmt.Println("Don't know how to process this command...", os.Args)
 		printUsage()
@@ -89,7 +86,7 @@ func getProjects(baseUrl, projectsCsvPath string) error {
 	return nil
 }
 
-func getPullRequests(baseUrl, minDate, maxDate, projectsCsvPath, pullrequestsCsvPath string) error {
+func getPullRequests(baseUrl, minDate, maxDate, pullrequestsCsvPath string) error {
 	output, err := os.Create(pullrequestsCsvPath)
 	if err != nil {
 		return err
@@ -105,6 +102,7 @@ func getPullRequests(baseUrl, minDate, maxDate, projectsCsvPath, pullrequestsCsv
 		"mergeStatus",
 		"reviewersCount",
 		"url",
+		"lastMergeCommit",
 	)
 
 	url := fmt.Sprintf("%s/_apis/git/pullrequests?api-version=7.1-preview.1&searchCriteria.status=completed&searchCriteria.minTime=%s&searchCriteria.maxTime=%s", baseUrl, minDate, maxDate)
@@ -135,6 +133,7 @@ func getPullRequests(baseUrl, minDate, maxDate, projectsCsvPath, pullrequestsCsv
 		pr := p.(map[string]any)
 		author := pr["createdBy"].(map[string]any)
 		reviewers := pr["reviewers"].([]interface{})
+		lastMerge := pr["lastMergeCommit"].(map[string]any)
 		appendRecord(output,
 			fmt.Sprint(pr["pullRequestId"]),
 			author["id"].(string),
@@ -145,6 +144,7 @@ func getPullRequests(baseUrl, minDate, maxDate, projectsCsvPath, pullrequestsCsv
 			pr["mergeStatus"].(string),
 			fmt.Sprint(len(reviewers)),
 			pr["url"].(string),
+			lastMerge["commitId"].(string),
 		)
 	}
 
@@ -180,6 +180,6 @@ func printUsage() {
 	fmt.Println("USAGE:")
 	fmt.Println("  abacus projects <URL to AzDO org> [output CSV path]")
 	fmt.Println("            Retrieves a list of projects from the given Azure DevOps Organization URL")
-	fmt.Println("  abacus pullrequests <URL to AzDO org> <minimum date> <maximum date> [projects CSV path] [output CSV path]")
-	fmt.Println("               Retrieves Pull Requests for each of the project/user combination")
+	fmt.Println("  abacus pullrequests <URL to AzDO org> <minimum date> <maximum date> [output CSV path]")
+	fmt.Println("               Retrieves Pull Requests' metadata")
 }
