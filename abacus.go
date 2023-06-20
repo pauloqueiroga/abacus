@@ -95,8 +95,12 @@ func getPullRequests(baseUrl, minDate, maxDate, pullrequestsCsvPath string) erro
 	appendRecord(output,
 		"pullRequestId",
 		"authorId",
+		"authorDescriptor",
+		"authorUsername",
 		"creationDate",
 		"closedDate",
+		"repository",
+		"project",
 		"sourceRefName",
 		"targetRefName",
 		"mergeStatus",
@@ -134,11 +138,17 @@ func getPullRequests(baseUrl, minDate, maxDate, pullrequestsCsvPath string) erro
 		author := pr["createdBy"].(map[string]any)
 		reviewers := pr["reviewers"].([]interface{})
 		lastMerge := pr["lastMergeCommit"].(map[string]any)
+		repository := pr["repository"].(map[string]any)
+		project := repository["project"].(map[string]any)
 		appendRecord(output,
 			fmt.Sprint(pr["pullRequestId"]),
 			author["id"].(string),
+			author["descriptor"].(string),
+			author["uniqueName"].(string),
 			pr["creationDate"].(string),
 			pr["closedDate"].(string),
+			repository["name"].(string),
+			project["name"].(string),
 			pr["sourceRefName"].(string),
 			pr["targetRefName"].(string),
 			pr["mergeStatus"].(string),
