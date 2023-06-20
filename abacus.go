@@ -109,7 +109,7 @@ func getPullRequests(baseUrl, minDate, maxDate, pullrequestsCsvPath string) erro
 		"lastMergeCommit",
 	)
 
-	url := fmt.Sprintf("%s/_apis/git/pullrequests?api-version=7.1-preview.1&searchCriteria.status=completed&searchCriteria.minTime=%s&searchCriteria.maxTime=%s", baseUrl, minDate, maxDate)
+	url := fmt.Sprintf("%s/_apis/git/pullrequests?api-version=7.1-preview.1&searchCriteria.status=completed&searchCriteria.queryTimeRangeType=closed&searchCriteria.minTime=%s&searchCriteria.maxTime=%s", baseUrl, minDate, maxDate)
 	req, err := newHttpRequest("get", url, nil)
 	if err != nil {
 		return err
