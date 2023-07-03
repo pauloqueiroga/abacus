@@ -39,30 +39,10 @@ func main() {
 		if len(os.Args) >= 6 {
 			pullrequestsCsvPath = os.Args[5]
 		}
-		output, err := os.Create(pullrequestsCsvPath)
+		err := gatherPullRequests(os.Args[2], os.Args[3], os.Args[4], pullrequestsCsvPath)
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer output.Close()
-
-		appendRecord(output,
-			"pullRequestId",
-			"authorId",
-			"authorDescriptor",
-			"authorUsername",
-			"creationDate",
-			"closedDate",
-			"repository",
-			"project",
-			"sourceRefName",
-			"targetRefName",
-			"mergeStatus",
-			"reviewersCount",
-			"url",
-			"lastMergeCommit",
-		)
-		getPullRequests(os.Args[2], os.Args[3], os.Args[4], "refs/heads/main", output)
-		getPullRequests(os.Args[2], os.Args[3], os.Args[4], "refs/heads/master", output)
 	default:
 		fmt.Println("Don't know how to process this command...", os.Args)
 		printUsage()
@@ -104,6 +84,42 @@ func getProjects(baseUrl, projectsCsvPath string) error {
 	for _, p := range projList {
 		proj := p.(map[string]any)
 		appendRecord(output, proj["id"].(string), proj["name"].(string))
+	}
+
+	return nil
+}
+
+func gatherPullRequests(baseUrl, minDate, maxDate, pullrequestsCsvPath string) error {
+	output, err := os.Create(pullrequestsCsvPath)
+	if err != nil {
+		return err
+	}
+	defer output.Close()
+
+	appendRecord(output,
+		"pullRequestId",
+		"authorId",
+		"authorDescriptor",
+		"authorUsername",
+		"creationDate",
+		"closedDate",
+		"repository",
+		"project",
+		"sourceRefName",
+		"targetRefName",
+		"mergeStatus",
+		"reviewersCount",
+		"url",
+		"lastMergeCommit",
+	)
+	err = getPullRequests(os.Args[2], os.Args[3], os.Args[4], "refs/heads/main", output)
+	if err != nil {
+		return err
+	}
+
+	err = getPullRequests(os.Args[2], os.Args[3], os.Args[4], "refs/heads/master", output)
+	if err != nil {
+		return err
 	}
 
 	return nil
