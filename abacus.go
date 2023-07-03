@@ -39,7 +39,30 @@ func main() {
 		if len(os.Args) >= 6 {
 			pullrequestsCsvPath = os.Args[5]
 		}
-		getPullRequests(os.Args[2], os.Args[3], os.Args[4], pullrequestsCsvPath)
+		output, err := os.Create(pullrequestsCsvPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer output.Close()
+
+		appendRecord(output,
+			"pullRequestId",
+			"authorId",
+			"authorDescriptor",
+			"authorUsername",
+			"creationDate",
+			"closedDate",
+			"repository",
+			"project",
+			"sourceRefName",
+			"targetRefName",
+			"mergeStatus",
+			"reviewersCount",
+			"url",
+			"lastMergeCommit",
+		)
+		getPullRequests(os.Args[2], os.Args[3], os.Args[4], "refs/heads/main", output)
+		getPullRequests(os.Args[2], os.Args[3], os.Args[4], "refs/heads/master", output)
 	default:
 		fmt.Println("Don't know how to process this command...", os.Args)
 		printUsage()
@@ -86,30 +109,8 @@ func getProjects(baseUrl, projectsCsvPath string) error {
 	return nil
 }
 
-func getPullRequests(baseUrl, minDate, maxDate, pullrequestsCsvPath string) error {
-	output, err := os.Create(pullrequestsCsvPath)
-	if err != nil {
-		return err
-	}
-	defer output.Close()
-	appendRecord(output,
-		"pullRequestId",
-		"authorId",
-		"authorDescriptor",
-		"authorUsername",
-		"creationDate",
-		"closedDate",
-		"repository",
-		"project",
-		"sourceRefName",
-		"targetRefName",
-		"mergeStatus",
-		"reviewersCount",
-		"url",
-		"lastMergeCommit",
-	)
-
-	url := fmt.Sprintf("%s/_apis/git/pullrequests?api-version=7.1-preview.1&searchCriteria.status=completed&searchCriteria.queryTimeRangeType=closed&searchCriteria.minTime=%s&searchCriteria.maxTime=%s", baseUrl, minDate, maxDate)
+func getPullRequests(baseUrl, minDate, maxDate, targetRefName string, output *os.File) error {
+	url := fmt.Sprintf("%s/_apis/git/pullrequests?api-version=7.1-preview.1&searchCriteria.status=completed&searchCriteria.queryTimeRangeType=closed&searchCriteria.minTime=%s&searchCriteria.maxTime=%s&searchCriteria.targetRefName=%s&$top=1500", baseUrl, minDate, maxDate, targetRefName)
 	req, err := newHttpRequest("get", url, nil)
 	if err != nil {
 		return err
