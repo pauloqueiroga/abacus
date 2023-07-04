@@ -250,7 +250,7 @@ func calculateGitLogStats(baseUrl, pullrequestsCsvPath, gitlogCsvPath, localRepo
 		gitUrl := fmt.Sprintf("%s/%s/_git/%s", baseUrl, project, repository)
 		err = cloneIfNeeded(gitUrl, localReposFolder, branch)
 		if err != nil {
-			log.Println(err.Error())
+			log.Println("Skipping clone of", gitUrl)
 		}
 		err = getGitLog(localReposFolder, repository, pr[field["lastMergeCommit"]], pr[field["pullRequestId"]], pr[field["authorUsername"]], pr[field["closedDate"]], output)
 		if err != nil {
