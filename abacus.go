@@ -21,6 +21,7 @@ func main() {
 	projectsCsvPath := "local-only/projects.csv"
 	pullrequestsCsvPath := "local-only/pullrequests.csv"
 	gitlogCsvPath := "local-only/gitlog.csv"
+	jiraTicketsCsvPath := "local-only/jira-tickets.csv"
 	localReposFolder := "local-only/repos"
 
 	switch os.Args[1] {
@@ -65,6 +66,19 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+	case "jql-pr":
+		if len(os.Args) < 4 {
+			fmt.Println("At least three arguments are required.")
+			printUsage()
+			return
+		}
+		if len(os.Args) >= 5 {
+			jiraTicketsCsvPath = os.Args[4]
+		}
+		err := getJiraTickets(os.Args[2], os.Args[3], jiraTicketsCsvPath)
+		if err != nil {
+			log.Fatal(err)
+		}
 	case "help":
 		printUsage()
 		return
@@ -89,13 +103,13 @@ func parseFields(r *csv.Reader) (map[string]int, error) {
 	return result, nil
 }
 
-func newHttpRequest(method string, url string, reqBody io.Reader) (*http.Request, error) {
-	r, err := http.NewRequest(method, url, reqBody)
+func newHttpRequest(authUser, authPass string, method string, fullUrl string, reqBody io.Reader) (*http.Request, error) {
+	r, err := http.NewRequest(method, fullUrl, reqBody)
 	if err != nil {
 		return nil, err
 	}
 
-	r.SetBasicAuth("anything", os.Getenv("AZDO_TOKEN"))
+	r.SetBasicAuth(authUser, authPass)
 	r.Header.Add("Accept", "application/json")
 	r.Header.Add("Content-type", "application/json")
 	return r, nil
@@ -119,9 +133,11 @@ func printUsage() {
 	fmt.Println("  abacus projects <URL to AzDO org> [output CSV path]")
 	fmt.Println("            Retrieves a list of projects from the given Azure DevOps Organization URL")
 	fmt.Println("  abacus pullrequests <URL to AzDO org> <minimum date> <maximum date> [output CSV path]")
-	fmt.Println("               Retrieves Pull Requests' metadata")
+	fmt.Println("            Retrieves Pull Requests' metadata")
 	fmt.Println("  abacus gitlogs <Base Git URL> [input CSV path] [output CSV path] [local path for Git repositories]")
 	fmt.Println("            Retrieves Git log statistics for the repositories and branches in the input CSV file")
+	fmt.Println("  abacus jql-pr <URL to Jira> <JQL query> [output CSV path]")
+	fmt.Println("            Retrieves Jira issues' metadata and linked Pull Requests")
 	fmt.Println("  abacus help")
 	fmt.Println("            Prints this message")
 }

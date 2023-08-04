@@ -16,7 +16,7 @@ func getProjects(baseUrl, projectsCsvPath string) error {
 	defer output.Close()
 	appendRecord(output, "id", "name")
 
-	req, err := newHttpRequest("get", baseUrl+"/_apis/projects?api-version=7.0", nil)
+	req, err := newHttpRequest("anything", os.Getenv("AZDO_TOKEN"), "get", baseUrl+"/_apis/projects?api-version=7.0", nil)
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func gatherPullRequests(baseUrl, minDate, maxDate, pullrequestsCsvPath string) e
 
 func getPullRequests(baseUrl, minDate, maxDate, targetRefName string, output *os.File) error {
 	url := fmt.Sprintf("%s/_apis/git/pullrequests?api-version=7.1-preview.1&searchCriteria.status=completed&searchCriteria.queryTimeRangeType=closed&searchCriteria.minTime=%s&searchCriteria.maxTime=%s&searchCriteria.targetRefName=%s&$top=1500", baseUrl, minDate, maxDate, targetRefName)
-	req, err := newHttpRequest("get", url, nil)
+	req, err := newHttpRequest("anything", os.Getenv("AZDO_TOKEN"), "get", url, nil)
 	if err != nil {
 		return err
 	}
