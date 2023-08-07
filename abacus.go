@@ -22,6 +22,8 @@ func main() {
 	pullrequestsCsvPath := "local-only/pullrequests.csv"
 	gitlogCsvPath := "local-only/gitlog.csv"
 	jiraTicketsCsvPath := "local-only/jira-tickets.csv"
+	jiraSetCsvPath := "local-only/jira-set-input.csv"
+	jiraSetOutputCsvPath := "local-only/jira-set-output.csv"
 	localReposFolder := "local-only/repos"
 
 	switch os.Args[1] {
@@ -76,6 +78,22 @@ func main() {
 			jiraTicketsCsvPath = os.Args[4]
 		}
 		err := getJiraTickets(os.Args[2], os.Args[3], jiraTicketsCsvPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+	case "jira-set-field":
+		if len(os.Args) < 4 {
+			fmt.Println("At least three arguments are required.")
+			printUsage()
+			return
+		}
+		if len(os.Args) >= 5 {
+			jiraSetCsvPath = os.Args[4]
+		}
+		if len(os.Args) >= 6 {
+			jiraSetOutputCsvPath = os.Args[5]
+		}
+		err := setJiraField(os.Args[2], os.Args[3], jiraSetCsvPath, jiraSetOutputCsvPath)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -138,6 +156,8 @@ func printUsage() {
 	fmt.Println("            Retrieves Git log statistics for the repositories and branches in the input CSV file")
 	fmt.Println("  abacus jql-pr <URL to Jira> <JQL query> [output CSV path]")
 	fmt.Println("            Retrieves Jira issues' metadata and linked Pull Requests")
+	fmt.Println("  abacus jira-set-field <URL to Jira> <field-name> [input CSV path] [output CSV path]")
+	fmt.Println("            Reads an input CSV and sets the given field to the given value for each issue in Jira")
 	fmt.Println("  abacus help")
 	fmt.Println("            Prints this message")
 }

@@ -41,6 +41,15 @@ Abacus requires the following environment variables to be set:
 
 ## Jira operations
 
+### `jira-set-field <URL to Jira> <field-name> [input CSV path] [output CSV path]`
+
+`jira-set-field` is a command that eads an input CSV and sets the given field to the given value for each issue in Jira instance determined by the given URL. The command takes the following arguments:
+
+- `URL to Jira`: Mandatory. The URL to the Jira instance to modify.
+- `field-name`: Mandatory. The name of the field to set. Must match the name of a field in Jira and in the input CSV's header.
+- `input CSV path`: Optional. The path to the CSV file with issue data. If not specified, the command will look for the CSV file in a default input CSV path.
+- `output CSV path`: Optional. The path to the CSV file to write the results to. If not specified, the results will be written to a default output CSV path.
+
 ### `jql-pr <URL to Jira> <JQL query> [output CSV path]`
 
 `jql-pr` is a command that takes a JQL query and returns a list of pull requests that match the query. This command makes use of at least one undocumented Jira API endpoint, so there's a chance it might not work sometime in the future. The command takes the following arguments:
